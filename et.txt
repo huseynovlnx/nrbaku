@@ -1,0 +1,5 @@
+Lokal Keşləmə (Local Caching): Mesajlaşma ekranı açıldıqda bütün keçmiş mesajları yenidən Firebase-dən çəkmək (çoxlu 'read' xərci) böyük səhvdir. Məlumatı lokal yaddaşda (məsələn, SQLite, Hive və ya Isar) saxlayıb, yalnız yeni gələn mesajlar üçün Firestore-u dinləmək (listen) lazımdır. Clean Architecture prinsiplərini düzgün tətbiq edərək Data Layer-də "Lokal" və "Uzaq" (Remote) mənbələri düzgün ayırmaq büdcəni xilas edir.
+
+
+Pagination (Səhifələmə): Köhnə mesajları və ya qalereyanı yalnız istifadəçi yuxarı kaydırdıqda (scroll etdikdə) 20-20 (limit ilə) yükləyin. Bütün bazanı bir dəfəyə çəkməyin.
+

@@ -1,0 +1,2 @@
+﻿WORKER_URL=https://sesi-push-relay.instagramim-az.workers.dev
+WORKER_AUTH_SECRET=9fMWX21HIf90VeMkZVedkD1xfHVCfCCbQpu5lcY

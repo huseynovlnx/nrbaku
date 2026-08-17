@@ -1,0 +1,14 @@
+name = "sesi-push-relay"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# Hər gün saat 03:00 UTC-də işə düşür — "Gəzinti Tarixçəsi"ndə 2 həftədən
+# köhnə URL yazılarını silir (bax: scheduled() funksiyası, src/index.js).
+[triggers]
+crons = ["0 3 * * *"]
+
+# QEYD: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY,
+# WORKER_AUTH_SECRET dəyərləri BURAYA YAZILMIR — onları Cloudflare
+# Dashboard-un "Settings → Variables and Secrets" bölməsindən əl ilə
+# əlavə edəcəksən (aşağıdakı README-yə bax). Bu fayl heç bir məxfi
+# məlumat saxlamır, ona görə təhlükəsiz şəkildə paylaşıla/saxlanıla bilər.
