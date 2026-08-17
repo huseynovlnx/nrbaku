@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/adminAccess/config) &&
+        request.auth.uid in get(/databases/$(database)/documents/adminAccess/config).data.adminUids;
+    }
+
+    function hasAdminRole() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isAdminOrOwner(uid) {
+      return isOwner(uid) || isAdmin() || hasAdminRole();
+    }
+
+    // ── users/{uid} ───────────────────────────────────────────────────
+    // Hər kəs yalnız öz profilini oxuya/yaza bilər.
+    // Admin bütün istifadəçiləri oxuya bilər (cihaz siyahısı üçün).
+    match /users/{uid} {
+      allow read: if isAdminOrOwner(uid);
+      allow write: if isOwner(uid);
+    }
+
+    // ── devices/{uid} ─────────────────────────────────────────────────
+    // Cihaz yalnız ÖZ status sənədini yazabilsin.
+    // Admin bütün cihazları oxuya bilər.
+    match /devices/{uid} {
+      allow read: if isAdminOrOwner(uid);
+      allow write: if isOwner(uid);
+
+      // Günlük marşrut alt-kolleksiyası
+      match /route/{date} {
+        allow read: if isAdminOrOwner(uid);
+        allow write: if isOwner(uid);
+      }
+    }
+
+    // ── locations/{uid} ───────────────────────────────────────────────
+    // Cihaz yalnız öz mövqeyini yazabilsin.
+    // Admin bütün lokasiyaları oxuya bilər.
+    match /locations/{uid} {
+      allow read: if isAdminOrOwner(uid);
+      allow write: if isOwner(uid);
+    }
+
+    // ── adminChats/{deviceUid}/messages/{msgId} ───────────────────────
+    // Admin və həmin cihaz arasında chat.
+    // Hər iki tərəf yazabilsin, hər iki tərəf oxuya bilsin.
+    match /adminChats/{deviceUid} {
+      allow read, write: if isAdminOrOwner(deviceUid);
+
+      match /messages/{msgId} {
+        allow read, write: if isAdminOrOwner(deviceUid);
+      }
+    }
+
+    // ── reminders/{uid}/items/{id} ────────────────────────────────────
+    match /reminders/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /items/{id} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ── browsingHistory/{uid}/urls/{id} ───────────────────────────────
+    // Cihaz yalnız öz tarixçəsini yazabilsin.
+    // Admin oxuya bilsin.
+    match /browsingHistory/{uid} {
+      allow read: if isAdminOrOwner(uid);
+      allow write: if isOwner(uid);
+
+      match /urls/{id} {
+        allow read: if isAdminOrOwner(uid);
+        allow write: if isOwner(uid);
+      }
+    }
+
+    // ── sharedNotifications/{deviceUid}/items/{id} ────────────────────
+    // Cihaz öz bildirişlərini paylaşa bilər.
+    // Admin oxuya bilər.
+    match /sharedNotifications/{deviceUid} {
+      allow read: if isAdminOrOwner(deviceUid);
+      allow write: if isOwner(deviceUid);
+
+      match /items/{id} {
+        allow read: if isAdminOrOwner(deviceUid);
+        allow write: if isOwner(deviceUid);
+      }
+    }
+
+    // ── urgentCalls/{deviceUid}/items/{callId} ────────────────────────
+    match /urgentCalls/{deviceUid} {
+      allow read: if isAdminOrOwner(deviceUid);
+      allow write: if isOwner(deviceUid);
+
+      match /items/{callId} {
+        allow read: if isAdminOrOwner(deviceUid);
+        allow write: if isOwner(deviceUid);
+      }
+    }
+
+    // ── adminAccess/config ────────────────────────────────────────────
+    // Yalnız admin tərəfindən oxuna/yazıla bilər.
+    // Bu sənəd əl ilə yaradılmalıdır (Firebase Console-dan).
+    match /adminAccess/config {
+      allow read, write: if isAdmin() || hasAdminRole();
+    }
+  }
+}

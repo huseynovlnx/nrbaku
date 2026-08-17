@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "urls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "capturedAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "97947807566",
+    "project_id": "nrbaku-app",
+    "storage_bucket": "nrbaku-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:97947807566:android:67f4a648a1e5a514ac781f",
+        "android_client_info": {
+          "package_name": "com.example.private_couple_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "97947807566-luios5akras5jgggtn5ei63ivhifrcbj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgI2SRjIH8SLaFaDZZonvBCA_2pokdXKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "97947807566-luios5akras5jgggtn5ei63ivhifrcbj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
