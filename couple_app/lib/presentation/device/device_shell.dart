@@ -49,7 +49,7 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
     }
 
     await _startLocationReporting(user.uid);
-    _startDeviceReporting(user.uid);  // uid indi real-time oxunur
+    _startDeviceReporting(user.uid);
 
     final reminders = await ref.read(remindersProvider.future);
     unawaited(
@@ -57,16 +57,12 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
     );
   }
 
-  /// Konum izləməni başlat:
-  /// 1) Əvvəlcə native background service yoxla ("Həmişə icazə ver" lazımdır)
-  /// 2) Native işləmirsə, Dart Geolocator stream-i işə sal (foreground-only)
   Future<void> _startLocationReporting(String uid) async {
     final svc = ref.read(locationServiceProvider);
     final status = await svc.checkStatus();
 
     bool nativeStarted = false;
 
-    // Yalnız "Həmişə icazə ver" varsa native background service işə sala bilər
     if (status == LocationPermission.always) {
       final bgGranted =
           await BackgroundLocationService.isBackgroundLocationGranted();
@@ -76,8 +72,6 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
       }
     }
 
-    // Native başlamayıbsa, Dart stream ilə fallback et
-    // (bu yalnız tətbiq açıq olanda işləyir)
     if (!nativeStarted &&
         (status == LocationPermission.always ||
             status == LocationPermission.whileInUse)) {
@@ -85,9 +79,6 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
     }
   }
 
-  /// Cihaz statusunu (batareya, WiFi) hər 5 dəqiqədən bir Firestore-a yaz.
-  /// Location artıq LocationService.startTracking() və ya
-  /// BackgroundLocationService tərəfindən ayrıca yazılır.
   void _startDeviceReporting(String uid) {
     _reportOnce();
     _reportTimer = Timer.periodic(
@@ -106,9 +97,7 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
           .collection('devices')
           .doc(currentUser.uid)
           .set(status, SetOptions(merge: true));
-    } catch (_) {
-      // Silent fail — cihaz statusu kritik deyil
-    }
+    } catch (_) {}
   }
 
   @override
@@ -116,10 +105,9 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
     _reportTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
-    // Dart stream-i dayandır
-    ref.read(locationServiceProvider).stopTracking();
+    final svc = ref.read(locationServiceProvider);
+    svc.stopTracking();
 
-    // Native background service-i dayandır
     BackgroundLocationService.stop();
 
     super.dispose();
@@ -130,11 +118,9 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
     if (state == AppLifecycleState.resumed) {
       final user = ref.read(userDocProvider).value;
       if (user != null) {
-        // App önə gələndə location reporting-i yenidən yoxla
         _startLocationReporting(user.uid);
         _reportOnce();
 
-        // Permission flow-u yenidən yoxla (istifadəçi ayarlardan icazə vermiş ola bilər)
         if (mounted) {
           _permissionFlow.run(context, myUid: user.uid, role: 'device');
         }
@@ -175,11 +161,9 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
       body: IndexedStack(
         index: _tab,
         children: [
-          // Admin ilə chat
           user != null
               ? DeviceChatScreen(deviceUid: user.uid, isAdmin: false)
               : const SizedBox.shrink(),
-          // Xatırladıcılar
           const RemindersScreen(),
         ],
       ),
@@ -198,7 +182,7 @@ class _DeviceShellState extends ConsumerState<DeviceShell>
           NavigationDestination(
             icon: unread > 0
                 ? Badge(
-                    label: Text('$unread'),
+                    label: Text('\$unread'),
                     backgroundColor: AppTheme.alert,
                     child: const Icon(Icons.chat_bubble_outline_rounded),
                   )

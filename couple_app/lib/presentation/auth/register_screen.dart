@@ -36,8 +36,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!mounted) return;
 
     if (ok) {
-      await ref.read(authRepositoryProvider).signOut();
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('✅ Qeydiyyat uğurludur! İndi giriş edin.'),
@@ -46,7 +44,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       Navigator.of(context).pop();
     } else {
-      final error = ref.read(authControllerProvider).error;
+      final state = ref.read(authControllerProvider);
+      final error = state.error;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error ?? 'Qeydiyyat uğursuz.')),
       );

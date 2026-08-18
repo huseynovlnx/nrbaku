@@ -45,11 +45,11 @@ class AdminChatRepository {
 
     if (snap.docs.isEmpty) return;
 
-    await _db.runTransaction((tx) async {
-      for (final doc in snap.docs) {
-        tx.update(doc.reference, {'isRead': true});
-      }
-    });
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
   }
 
   Stream<int> watchUnreadCount({

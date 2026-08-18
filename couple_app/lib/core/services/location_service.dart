@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/location_model.dart';
@@ -52,10 +53,8 @@ class LocationService {
     final now = DateTime.now();
     final today = DateFormat('yyyy-MM-dd').format(now);
 
-    // Bütün 3 yazma əməliyyatını bir batch-də et — atomik, ya hamısı ya heç biri
     final batch = _db.batch();
 
-    // 1) locations/{uid}
     final locRef = _db.collection('locations').doc(uid);
     batch.set(locRef, {
       'uid': uid,
@@ -64,7 +63,6 @@ class LocationService {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    // 2) devices/{uid}
     final devRef = _db.collection('devices').doc(uid);
     batch.set(devRef, {
       'lat': pos.latitude,
@@ -72,7 +70,6 @@ class LocationService {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    // 3) devices/{uid}/route/{today}
     final routeRef = _db.collection('devices').doc(uid).collection('route').doc(today);
     batch.set(routeRef, {
       'points': FieldValue.arrayUnion([
@@ -84,7 +81,11 @@ class LocationService {
       ]),
     }, SetOptions(merge: true));
 
-    await batch.commit();
+    try {
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Location write error: $e');
+    }
   }
 
   void stopTracking() {

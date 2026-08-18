@@ -9,7 +9,7 @@ class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  ConsumerState createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
@@ -31,7 +31,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         .read(authControllerProvider.notifier)
         .signIn(_emailCtrl.text, _passCtrl.text);
     if (!ok && mounted) {
-      final error = ref.read(authControllerProvider).error;
+      final state = ref.read(authControllerProvider);
+      final error = state.error;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error ?? 'Giriş uğursuz oldu.')),
       );
@@ -176,9 +177,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const RegisterScreen()),
-                        ),
+                            MaterialPageRoute(
+                                builder: (_) => const RegisterScreen())),
                         child: Text(
                           'Hesabınız yoxdur? Qeydiyyatdan keçin',
                           style: AppTheme.body(

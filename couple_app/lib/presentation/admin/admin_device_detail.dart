@@ -22,12 +22,14 @@ class _AdminDeviceDetailState extends ConsumerState<AdminDeviceDetail>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
   final _mapController = MapController();
+  late final String _todayRouteId;
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
     _tabCtrl.addListener(_onTabChanged);
+    _todayRouteId = DateFormat('yyyy-MM-dd').format(DateTime.now());
   }
 
   @override
@@ -41,9 +43,9 @@ class _AdminDeviceDetailState extends ConsumerState<AdminDeviceDetail>
   void _onTabChanged() {
     if (_tabCtrl.index == 1) {
       ref.read(adminChatControllerProvider.notifier).markRead(
-        deviceUid: widget.uid,
-        readByAdmin: true,
-      );
+            deviceUid: widget.uid,
+            readByAdmin: true,
+          );
     }
   }
 
@@ -125,7 +127,7 @@ class _AdminDeviceDetailState extends ConsumerState<AdminDeviceDetail>
                         color: AppTheme.alert,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text('$unread',
+                      child: Text('\$unread',
                           style: AppTheme.mono(
                               size: 10,
                               weight: FontWeight.w700,
@@ -141,10 +143,7 @@ class _AdminDeviceDetailState extends ConsumerState<AdminDeviceDetail>
       body: TabBarView(
         controller: _tabCtrl,
         children: [
-          // ── Məkan tab ──
-          _LocationTab(uid: widget.uid, mapController: _mapController),
-
-          // ── Chat tab ──
+          _LocationTab(uid: widget.uid, mapController: _mapController, todayRouteId: _todayRouteId),
           DeviceChatScreen(deviceUid: widget.uid, isAdmin: true),
         ],
       ),
@@ -155,7 +154,13 @@ class _AdminDeviceDetailState extends ConsumerState<AdminDeviceDetail>
 class _LocationTab extends StatelessWidget {
   final String uid;
   final MapController mapController;
-  const _LocationTab({required this.uid, required this.mapController});
+  final String todayRouteId;
+
+  const _LocationTab({
+    required this.uid,
+    required this.mapController,
+    required this.todayRouteId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +182,6 @@ class _LocationTab extends StatelessWidget {
 
         return Column(
           children: [
-            // Status zolağı
             Container(
               padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 10),
@@ -188,7 +192,6 @@ class _LocationTab extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  // Onlayn/oflayn indikator
                   Container(
                     width: 10,
                     height: 10,
@@ -211,7 +214,7 @@ class _LocationTab extends StatelessWidget {
                     icon: isCharging
                         ? Icons.bolt
                         : Icons.battery_full_rounded,
-                    label: battery >= 0 ? '$battery%' : '—',
+                    label: battery >= 0 ? '\$battery%' : '—',
                     color: battery < 20
                         ? AppTheme.alert
                         : battery < 50
@@ -235,22 +238,20 @@ class _LocationTab extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Xəritə + marşrut
             Expanded(
               child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection('devices')
                     .doc(uid)
                     .collection('route')
-                    .doc(DateFormat('yyyy-MM-dd').format(DateTime.now()))
+                    .doc(todayRouteId)
                     .snapshots(),
                 builder: (context, routeSnap) {
                   final routeData = routeSnap.data?.data() ?? {};
                   final rawPoints = routeData['points'] as List? ?? [];
                   final routePoints = rawPoints
                       .map((p) {
-                        final m = p as Map<String, dynamic>;
+                        final m = p as Map;
                         final la = (m['lat'] as num?)?.toDouble();
                         final lo = (m['lng'] as num?)?.toDouble();
                         if (la == null || lo == null) return null;
@@ -261,7 +262,7 @@ class _LocationTab extends StatelessWidget {
 
                   final center = lat != null && lng != null
                       ? LatLng(lat, lng)
-                      : const LatLng(40.4093, 49.8671); // Bakı default
+                      : const LatLng(40.4093, 49.8671);
 
                   return FlutterMap(
                     mapController: mapController,
@@ -325,13 +326,12 @@ class _LocationTab extends StatelessWidget {
     );
   }
 
-  /// Son görünmə vaxtını insana oxunaqlı formada formatlayır.
   String _fmtLastSeen(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inSeconds < 60) return 'indi';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} dəq əvvəl';
-    if (diff.inHours < 24) return '${diff.inHours} saat əvvəl';
-    if (diff.inDays < 7) return '${diff.inDays} gün əvvəl';
+    if (diff.inMinutes < 60) return '\${diff.inMinutes} dəq əvvəl';
+    if (diff.inHours < 24) return '\${diff.inHours} saat əvvəl';
+    if (diff.inDays < 7) return '\${diff.inDays} gün əvvəl';
     return DateFormat('d MMM yyyy, HH:mm').format(dt);
   }
 }

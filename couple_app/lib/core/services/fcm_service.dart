@@ -38,7 +38,8 @@ class FcmService {
   static final _fcm = FirebaseMessaging.instance;
   static final _db = FirebaseFirestore.instance;
   static bool _initialized = false;
-  static StreamSubscription<String>? _tokenRefreshSub;
+  static String? _lastUid;
+  static StreamSubscription? _tokenRefreshSub;
 
   static const _channelId = 'nrbaku_main';
   static const _channelName = 'NrBaku Bildirişləri';
@@ -52,7 +53,7 @@ class FcmService {
     final offset = DateTime.now().timeZoneOffset;
     final hours = offset.inHours;
     final sign = hours <= 0 ? '+' : '-';
-    final locationName = 'Etc/GMT$sign${hours.abs()}';
+    final locationName = 'Etc/GMT' + sign + '${hours.abs()}';
     try {
       tz.setLocalLocation(tz.getLocation(locationName));
     } catch (_) {
@@ -109,11 +110,12 @@ class FcmService {
   }
 
   static Future<void> init(String uid) async {
-    if (_initialized) {
+    if (_initialized && _lastUid == uid) {
       await _saveToken(uid);
       return;
     }
     _initialized = true;
+    _lastUid = uid;
 
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
     await _initLocalNotifPlugin();
@@ -137,6 +139,13 @@ class FcmService {
     _tokenRefreshSub = _fcm.onTokenRefresh.listen((t) => _updateToken(uid, t));
   }
 
+  static Future<void> reset() async {
+    _initialized = false;
+    _lastUid = null;
+    await _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = null;
+  }
+
   static Future<void> _handleIncomingMessage(RemoteMessage message) async {
     final data = message.data;
 
@@ -156,7 +165,7 @@ class FcmService {
       await _createChannels();
       await showNotification(
         title: '✓ Cavab verdi',
-        body: '${data['fromName'] ?? 'Cihaz'} çağırışına cavab verdi',
+        body: "${data['fromName'] ?? 'Cihaz'} çağırışına cavab verdi",
       );
       return;
     }
@@ -239,7 +248,10 @@ class FcmService {
 
   static Future<void> _updateToken(String uid, String token) async {
     try {
-      await _db.collection('users').doc(uid).update({'fcmToken': token});
+      await _db.collection('users').doc(uid).set(
+        {'fcmToken': token},
+        SetOptions(merge: true),
+      );
     } catch (_) {}
   }
 

@@ -3,6 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Event repository — "Evdəyəm" bildirişi üçün passiv saxlanılır.
 /// Yeni sistemdə admin ↔ cihaz arası event göndərmə AdminChat vasitəsilə edilir.
 /// Bu fayl compile xətası olmasın deyə saxlanılıb.
+///
+/// QEYD: EventType enum-u event_model.dart-dakı ilə eyni adlıdır.
+/// Hər iki faylı eyni vaxtda import etmək ambiguity xətasına səbəb ola bilər.
+/// Bu fayl yalnız backward compatibility üçün saxlanılıb.
 class EventRepository {
   final FirebaseFirestore _db;
   EventRepository({FirebaseFirestore? db})
@@ -11,15 +15,18 @@ class EventRepository {
   Future<void> sendEvent({
     required String myUid,
     required String partnerUid,
-    required EventType type,
+    required EventRepoType type,
     String? customMessage,
   }) async {
     // Passiv — yeni sistemdə istifadə olunmur
   }
 
-  Stream<List<dynamic>> watchEvents({required String uid}) {
+  Stream<List<Map<String, dynamic>>> watchEvents({required String uid}) {
     return Stream.value(const []);
   }
 }
 
-enum EventType { arrived, leftHome, other }
+/// EventRepository üçün xüsusi enum.
+/// event_model.dart-dakı EventType ilə ad conflict olmaması üçün
+/// fərqli adlandırılmışdır.
+enum EventRepoType { arrived, leftHome, other }

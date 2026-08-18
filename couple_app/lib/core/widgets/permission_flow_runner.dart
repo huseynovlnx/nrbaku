@@ -9,23 +9,13 @@ import '../services/notification_vault_service.dart';
 import '../services/permission_flow_service.dart';
 import 'permission_explainer.dart';
 
-/// Bütün icazələri SIRAYLA soruşan axın idarəçisi.
-///
-/// ƏSAS DƏYİŞİKLİK: əvvəl hər addımda `return` ilə kəsirdi,
-/// indi bütün addımlar ardıcıl icra olunur. İstifadəçi bir icazə
-/// verdikdən sonra proqramı yenidən açmaq məcburiyyətində qalmır.
-///
-/// [role] parametri ilə admin/cihaz/normal rejimə uyğun icazələr soruşulur:
-/// - admin: yalnız bildiriş + tam ekran + DND (vault/konum lazım deyil)
-/// - device: konum + bildiriş + tam ekran + DND + arxa plan + xatırladıcı
-/// - normal: hamısı (konum, bildiriş, tam ekran, DND, arxa plan, xatırladıcı, vault)
 class PermissionFlowRunner {
   bool _running = false;
 
   Future<void> run(
     BuildContext context, {
     required String myUid,
-    String role = 'normal', // 'admin', 'device', 'normal'
+    String role = 'normal',
   }) async {
     if (_running) return;
     _running = true;
@@ -41,7 +31,6 @@ class PermissionFlowRunner {
     required String myUid,
     required String role,
   }) async {
-    // ── 1) Konum icazəsi — admin üçün lazım deyil ─────────────────────
     if (role != 'admin') {
       final locStatus = await LocationService().checkStatus();
       if (locStatus == LocationPermission.denied) {
@@ -55,13 +44,13 @@ class PermissionFlowRunner {
                 : 'Partnerinizlə canlı konum paylaşa bilmək üçün '
                     'açılan pəncərədə "İcazə ver" seçimini edin.',
           );
+        }
+        if (context.mounted) {
           await LocationService().requestPermission();
         }
       }
     }
 
-    // ── 2) Bildiriş göndərmə icazəsi (Android 13+) ────────────────────
-    // Bundan sonrakı HEÇ bir bildiriş (SOS daxil) bu olmadan görünə bilməz.
     final notifPermStatus = await ph.Permission.notification.status;
     if (notifPermStatus.isDenied) {
       if (context.mounted) {
@@ -74,12 +63,12 @@ class PermissionFlowRunner {
               'üçün icazə verin.',
           buttonText: 'İcazə ver',
         );
+      }
+      if (context.mounted) {
         await ph.Permission.notification.request();
       }
     }
 
-    // ── 3) Full-Screen Intent (Android 14+) ───────────────────────────
-    // Təcili Çağırış üçün MÜTLƏQ lazımdır.
     final fullScreenGranted =
         await PermissionFlowService.isFullScreenIntentGranted();
     if (!fullScreenGranted) {
@@ -93,12 +82,12 @@ class PermissionFlowRunner {
               'belə ekranı aça bilmək üçün bu icazə lazımdır.',
           buttonText: 'Ayarlara keç',
         );
+      }
+      if (context.mounted) {
         await PermissionFlowService.openFullScreenIntentSettings();
       }
     }
 
-    // ── 4) DND (Do Not Disturb) girişi ────────────────────────────────
-    // Səssiz rejimdə də səs çıxsın.
     final dndGranted = await PermissionFlowService.isDndAccessGranted();
     if (!dndGranted) {
       if (context.mounted) {
@@ -111,14 +100,12 @@ class PermissionFlowRunner {
               'çağırışın səslə eşidilməsi üçün icazə verin.',
           buttonText: 'Ayarlara keç',
         );
+      }
+      if (context.mounted) {
         await PermissionFlowService.openDndAccessSettings();
       }
     }
 
-    // ═══ Bu nöqtəyə qədər bütün SOS-a aid icazələr tamamlanıb. ═══
-    // Aşağıdakılar ikinci dərəcəli (map/xatırladıcı/vault) xüsusiyyətlərdir.
-
-    // ── 5) Arxa planda yer paylaşımı ("Həmişə icazə ver") ─────────────
     if (role != 'admin') {
       final bgGranted =
           await BackgroundLocationService.isBackgroundLocationGranted();
@@ -133,12 +120,13 @@ class PermissionFlowRunner {
                 'açılan ekranda "Həmişə icazə ver" seçimini edin.',
             buttonText: 'Ayarlara keç',
           );
+        }
+        if (context.mounted) {
           await BackgroundLocationService.openBackgroundLocationSettings();
         }
       }
     }
 
-    // ── 6) Dəqiq vaxtlı xatırladıcılar ────────────────────────────────
     final exactAlarmGranted = await ExactAlarmService.canScheduleExactAlarms();
     if (!exactAlarmGranted) {
       if (context.mounted) {
@@ -151,12 +139,12 @@ class PermissionFlowRunner {
               'işə düşməsi üçün açılan ekranda NrBaku-ya icazə verin.',
           buttonText: 'Ayarlara keç',
         );
+      }
+      if (context.mounted) {
         await ExactAlarmService.openSettings();
       }
     }
 
-    // ── 7) Bildiriş girişi (NotificationListenerService) ──────────────
-    // Yalnız normal rejim. Admin və cihaz hesabları vault istifadə etmir.
     if (role == 'normal' && !NotificationVaultService.isIOS) {
       final vaultEnabled = await NotificationVaultService.isAccessEnabled();
       if (!vaultEnabled) {
@@ -169,11 +157,11 @@ class PermissionFlowRunner {
                 'keçidi aktivləşdirin — bütün bildirişlərə icazə verin.',
             buttonText: 'Ayarlara keç',
           );
+        }
+        if (context.mounted) {
           await NotificationVaultService.openAccessSettings();
         }
       }
     }
-
-    // Hamısı verilib — heç nə etmə
   }
 }

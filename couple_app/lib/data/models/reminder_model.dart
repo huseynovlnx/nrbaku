@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ReminderModel {
   final String id;
-  final String uid;          // sahibin uid-i (pairId əvəzinə)
+  final String uid;
   final String title;
   final DateTime dateTime;
   final bool isRecurringYearly;
@@ -46,10 +46,40 @@ class ReminderModel {
     }
     final now = DateTime.now();
     var next = DateTime(
-        now.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.minute);
+      now.year,
+      dateTime.month,
+      dateTime.day,
+      dateTime.hour,
+      dateTime.minute,
+    );
+
+    if (next.month != dateTime.month) {
+      next = DateTime(
+        now.year,
+        dateTime.month,
+        1,
+        dateTime.hour,
+        dateTime.minute,
+      ).add(Duration(days: dateTime.day - 1));
+    }
+
     if (next.isBefore(now)) {
-      next = DateTime(now.year + 1, dateTime.month, dateTime.day,
-          dateTime.hour, dateTime.minute);
+      next = DateTime(
+        now.year + 1,
+        dateTime.month,
+        dateTime.day,
+        dateTime.hour,
+        dateTime.minute,
+      );
+      if (next.month != dateTime.month) {
+        next = DateTime(
+          now.year + 1,
+          dateTime.month,
+          1,
+          dateTime.hour,
+          dateTime.minute,
+        ).add(Duration(days: dateTime.day - 1));
+      }
     }
     return next;
   }

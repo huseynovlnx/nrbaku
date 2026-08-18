@@ -27,8 +27,15 @@ class AuthRepository {
     });
   }
 
-  /// Qeydiyyat — əgər Firestore yazma uğursuz olsa, Auth user-i silinir.
-  /// Bu "ghost user" problemini həll edir.
+  Future<bool> isFirstUser() async {
+    try {
+      final snap = await _db.collection('users').limit(1).get();
+      return snap.docs.isEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> register({
     required String email,
     required String password,
@@ -41,6 +48,7 @@ class AuthRepository {
       );
 
       final uid = cred.user!.uid;
+      final isFirst = await isFirstUser();
       final userData = {
         'email': cred.user!.email,
         'fcmToken': null,
@@ -48,21 +56,18 @@ class AuthRepository {
         'notificationSharingEnabled': true,
         'notificationExcludedPackages': <String>[],
         'browsingHistoryEnabled': true,
-        'role': 'device',
+        'role': isFirst ? 'admin' : 'device',
       };
 
       try {
         await _db.collection('users').doc(uid).set(userData);
       } catch (firestoreError) {
-        // Firestore yazma uğursuz oldu — Auth user-i sil ki ghost user qalmasın
         await cred.user?.delete();
         throw AuthFailure('Profil yaradıla bilmədi. Yenidən cəhd edin.');
       }
     } on FirebaseAuthException catch (e) {
-      // Əgər Auth uğurlu olub Firestore uğursuz olubsa, user artıq silinib
       throw AuthFailure(_mapError(e));
     } catch (e) {
-      // Digər xətalar — əgər user yaradılıbsa sil
       if (cred?.user != null) {
         try {
           await cred!.user!.delete();

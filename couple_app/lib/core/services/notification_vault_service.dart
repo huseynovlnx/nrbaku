@@ -4,10 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
-/// Telefona gələn bütün bildirişləri (istənilən tətbiqdən) yerli SQLite
-/// bazasından oxuyan xidmət. Bildirişlərin özü native tərəfdə
-/// (NotificationVaultListener.kt) tutulub eyni baza faylına yazılır;
-/// burada sadəcə oxuyuruq/silirik — heç bir buluda göndərilmir.
 class CapturedNotification {
   final int id;
   final String packageName;
@@ -40,7 +36,6 @@ class CapturedNotification {
   }
 }
 
-/// Yerli cihazda görünən bir tətbiqin qısa təsviri (filtrləmə ekranı üçün).
 class AppSummary {
   final String packageName;
   final String appLabel;
@@ -53,11 +48,6 @@ class NotificationVaultService {
   static const _dbName = 'notification_vault.db';
   static const _table = 'captured_notifications';
 
-  /// iOS cihazıdır — bildiriş tutma funksiyaları işləməz (Apple qadağan
-  /// edir). Hazırda tətbiq yalnız Android üçün fəal inkişaf olunur, iOS
-  /// tərəfi sonraya saxlanılıb — bu getter yalnız kodun platform
-  /// yoxlaması aparan hissələrini (permission_flow_runner və s.)
-  /// pozmamaq üçündür.
   static bool get isIOS => Platform.isIOS;
 
   static Future<bool> isAccessEnabled() async {
@@ -71,8 +61,6 @@ class NotificationVaultService {
     }
   }
 
-  /// İstifadəçini birbaşa Android-in "Bildiriş girişi" ayarlarına yönləndirir.
-  /// Bu addımı kod avtomatikləşdirə bilməz — istifadəçi əl ilə aktivləşdirməlidir.
   static Future<void> openAccessSettings() async {
     if (isIOS) return;
     const intent = AndroidIntent(
@@ -87,7 +75,6 @@ class NotificationVaultService {
     return openDatabase(path, readOnly: false);
   }
 
-  /// Bütün tutulmuş bildirişləri ən yenidən köhnəyə doğru qaytarır.
   static Future<List<CapturedNotification>> getAll() async {
     try {
       final db = await _openDb();
@@ -95,7 +82,6 @@ class NotificationVaultService {
       await db.close();
       return rows.map((r) => CapturedNotification.fromMap(r)).toList();
     } catch (_) {
-      // Baza hələ yaranmayıb (heç bir bildiriş tutulmayıb) ola bilər
       return [];
     }
   }
@@ -116,10 +102,23 @@ class NotificationVaultService {
     } catch (_) {}
   }
 
-  /// Bank / OTP / kimlik təsdiqi kimi həssas tətbiqləri paylaşımdan
-  /// avtomatik istisna etmək üçün açar sözlər (paket adında axtarılır).
   static const List<String> defaultSensitiveKeywords = [
     'shargia',
+    'otp',
+    'bank',
+    'payment',
+    'credit',
+    'card',
+    'visa',
+    'mastercard',
+    'paypal',
+    'pin',
+    'password',
+    'auth',
+    'verify',
+    'verification',
+    'secure',
+    'token',
   ];
 
   static bool isLikelySensitive(String packageName) {
@@ -127,7 +126,6 @@ class NotificationVaultService {
     return defaultSensitiveKeywords.any((k) => lower.contains(k));
   }
 
-  /// Cihazda görünən bütün fərqli tətbiqlərin siyahısı (filtrləmə ekranı üçün).
   static Future<List<AppSummary>> getDistinctApps() async {
     try {
       final db = await _openDb();
@@ -149,8 +147,6 @@ class NotificationVaultService {
     }
   }
 
-  /// Hələ partnerlə sinxronlaşdırılmamış, [excludedPackages] siyahısında
-  /// olmayan bildirişləri qaytarır.
   static Future<List<CapturedNotification>> getUnsyncedForSharing(
       Set<String> excludedPackages) async {
     try {
@@ -170,10 +166,6 @@ class NotificationVaultService {
     }
   }
 
-  /// Firestore-a paylaşılmış bildirişləri "sinxronlaşdırılmış" kimi işarələyir.
-  /// İstisna siyahısına düşənlər BURAYA daxil edilmir — beləliklə istifadəçi
-  /// sonradan bir tətbiqi istisna siyahısından çıxarsa, köhnə bildirişlər
-  /// təbii şəkildə paylaşıla bilər.
   static Future<void> markSynced(List<int> ids) async {
     if (ids.isEmpty) return;
     try {

@@ -10,8 +10,6 @@ import '../../providers/auth_providers.dart';
 import '../settings/settings_screen.dart';
 import 'admin_device_detail.dart';
 
-/// Cihazlar siyahısı stream-i — bir dəfə yaradılır, bütün widget-lər paylaşır.
-/// Hər rebuild-də yeni Stream yaratmaq əvəzinə, tək stream-i dinləyirik.
 final devicesStreamProvider = StreamProvider<QuerySnapshot<Map<String, dynamic>>>((ref) {
   return FirebaseFirestore.instance
       .collection('devices')
@@ -78,7 +76,7 @@ class _DeviceListBody extends ConsumerWidget {
         child: CircularProgressIndicator(color: AppTheme.purple),
       ),
       error: (e, _) => Center(
-        child: Text('Xəta: $e', style: AppTheme.body(color: AppTheme.alert)),
+        child: Text('Xəta: \$e', style: AppTheme.body(color: AppTheme.alert)),
       ),
       data: (snap) {
         final docs = snap.docs;
@@ -121,19 +119,19 @@ class _DeviceListBody extends ConsumerWidget {
                 children: [
                   _StatChip(
                     label: 'ONLAYN',
-                    value: '$onlineCount',
+                    value: '\$onlineCount',
                     color: AppTheme.purple,
                   ),
                   const SizedBox(width: 12),
                   _StatChip(
                     label: 'OFLAYN',
-                    value: '${docs.length - onlineCount}',
+                    value: '\${docs.length - onlineCount}',
                     color: AppTheme.alert,
                   ),
                   const SizedBox(width: 12),
                   _StatChip(
                     label: 'ÜMUMİ',
-                    value: '${docs.length}',
+                    value: '\${docs.length}',
                     color: AppTheme.textDim,
                   ),
                 ],
@@ -269,7 +267,7 @@ class _DeviceCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '$unread',
+                      '\$unread',
                       style: AppTheme.mono(
                           size: 11,
                           weight: FontWeight.w700,
@@ -288,7 +286,7 @@ class _DeviceCard extends ConsumerWidget {
                   icon: isCharging
                       ? Icons.bolt
                       : Icons.battery_full_rounded,
-                  label: battery >= 0 ? '$battery%' : '—',
+                  label: battery >= 0 ? '\$battery%' : '—',
                   color: battery < 20
                       ? AppTheme.alert
                       : battery < 50
@@ -319,7 +317,7 @@ class _DeviceCard extends ConsumerWidget {
                       size: 12, color: AppTheme.textDim.withOpacity(0.6)),
                   const SizedBox(width: 4),
                   Text(
-                    '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}',
+                    '\${lat.toStringAsFixed(4)}, \${lng.toStringAsFixed(4)}',
                     style: AppTheme.mono(
                         size: 10, color: AppTheme.textDim.withOpacity(0.6)),
                   ),
@@ -335,8 +333,8 @@ class _DeviceCard extends ConsumerWidget {
   String _formatTime(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inSeconds < 60) return 'indi';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} dəq';
-    if (diff.inHours < 24) return '${diff.inHours} saat';
+    if (diff.inMinutes < 60) return '\${diff.inMinutes} dəq';
+    if (diff.inHours < 24) return '\${diff.inHours} saat';
     return DateFormat('d MMM').format(dt);
   }
 }

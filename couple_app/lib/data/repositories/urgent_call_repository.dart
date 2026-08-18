@@ -1,26 +1,17 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/urgent_call_model.dart';
 
-/// Təcili Çağırış repository-si.
-/// Yol: urgentCalls/{deviceUid}/items/{callId}
-///
-/// KÖHNƏ: urgentCalls/{pairId}/items/{callId} (couple sistemi)
-/// YENİ:  urgentCalls/{deviceUid}/items/{callId} (monitoring sistemi)
-///
-/// Qeyd: SOS sistemi hazırda UI-dan gizlədilmişdir, amma backend
-/// hazır saxlanılır — gələcəkdə admin tərəfindən cihaza təcili
-/// çağırış göndərmək funksionallığı üçün.
 class UrgentCallRepository {
-  final _subscriptions = <String, StreamSubscription>{};
+  final Map<String, StreamSubscription> _subscriptions = {};
   final FirebaseFirestore _db;
+
   UrgentCallRepository({FirebaseFirestore? db})
       : _db = db ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> _items(String deviceUid) =>
       _db.collection('urgentCalls').doc(deviceUid).collection('items');
 
-  /// Yeni təcili çağırış göndərir. Firestore-a yazılan sənəd
-  /// Cloud Function tərəfindən avtomatik FCM data-only push-a çevrilə bilər.
   Future<String> send({
     required String deviceUid,
     required String fromUid,
@@ -41,13 +32,11 @@ class UrgentCallRepository {
     return doc.id;
   }
 
-  /// Cihaza gələn, hələ cavablanmamış çağırışları dinləyir.
   Stream<UrgentCallModel?> watchIncoming({
     required String deviceUid,
     required String myUid,
   }) {
-    // Əvvəlki subscription-u ləğv et (memory leak əngəlləmək üçün)
-    _subscriptions['incoming_$deviceUid']?.cancel();
+    _subscriptions['incoming_\$deviceUid']?.cancel();
     bool isFirst = true;
     final seenIds = <String>{};
 
@@ -56,7 +45,7 @@ class UrgentCallRepository {
         .orderBy('createdAt', descending: true)
         .limit(5)
         .snapshots()
-        .asyncExpand((snap) async* {
+        .asyncExpand<UrgentCallModel?>((snap) async* {
       if (isFirst) {
         isFirst = false;
         for (final d in snap.docs) {
@@ -73,7 +62,8 @@ class UrgentCallRepository {
         }
       }
     });
-    _subscriptions['incoming_$deviceUid'] = stream.listen((_) {});
+
+    _subscriptions['incoming_\$deviceUid'] = stream.listen((_) {});
     return stream;
   }
 
@@ -84,7 +74,6 @@ class UrgentCallRepository {
     _subscriptions.clear();
   }
 
-  /// Göndərdiyim çağırışların cavab statusunu izləmək üçün.
   Stream<List<UrgentCallModel>> watchMine({
     required String deviceUid,
     required String myUid,
@@ -108,12 +97,9 @@ class UrgentCallRepository {
         'status': 'responded',
         'respondedAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
-      // Sənəd artıq yoxdursa/yazıla bilmirsə sükutla keç
-    }
+    } catch (_) {}
   }
 
-  /// "pending" -> "responded" vəziyyətinə KEÇƏN ANDA bir dəfə emit edir.
   Stream<UrgentCallModel?> watchNewlyResponded({
     required String deviceUid,
     required String myUid,
@@ -126,7 +112,7 @@ class UrgentCallRepository {
         .orderBy('createdAt', descending: true)
         .limit(10)
         .snapshots()
-        .asyncExpand((snap) async* {
+        .asyncExpand<UrgentCallModel?>((snap) async* {
       if (isFirst) {
         isFirst = false;
         for (final d in snap.docs) {

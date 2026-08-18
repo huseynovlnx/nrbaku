@@ -1,3 +1,5 @@
 .wrangler/
-*firebase*.json
-flutter-ai-playground-*
+**/build/
+*.json
+!firestore.indexes.json
+!**/firestore.indexes.json

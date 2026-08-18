@@ -4,7 +4,7 @@ enum UrgentCallStatus { pending, responded }
 
 class UrgentCallModel {
   final String id;
-  final String pairId;
+  final String deviceUid;
   final String fromUid;
   final String fromName;
   final String toUid;
@@ -15,7 +15,7 @@ class UrgentCallModel {
 
   const UrgentCallModel({
     required this.id,
-    required this.pairId,
+    required this.deviceUid,
     required this.fromUid,
     required this.fromName,
     required this.toUid,
@@ -28,9 +28,9 @@ class UrgentCallModel {
   factory UrgentCallModel.fromMap(String id, Map<String, dynamic> data) {
     return UrgentCallModel(
       id: id,
-      pairId: data['pairId'] as String? ?? '',
+      deviceUid: data['deviceUid'] as String? ?? '',
       fromUid: data['fromUid'] as String? ?? '',
-      fromName: data['fromName'] as String? ?? 'Partner',
+      fromName: data['fromName'] as String? ?? 'Admin',
       toUid: data['toUid'] as String? ?? '',
       message: data['message'] as String? ?? '',
       status: (data['status'] as String? ?? 'pending') == 'responded'

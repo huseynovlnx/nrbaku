@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/access_providers.dart';
 import '../../providers/auth_providers.dart';
 import '../vault/secret_pin_gate_screen.dart';
 
@@ -20,7 +21,6 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // Rol badge
           Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -66,7 +66,10 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.logout,
             label: 'Çıxış et',
             color: AppTheme.alert,
-            onTap: () => ref.read(authRepositoryProvider).signOut(),
+            onTap: () async {
+              ref.read(accessRepositoryProvider).clearCache();
+              await ref.read(authRepositoryProvider).signOut();
+            },
           ),
         ],
       ),
@@ -74,8 +77,6 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-/// "Ayarlar" başlığına 5 dəfə toxunduqda gizli bölmənin PIN ekranını açır
-/// (kod: 1752). Heç bir vizual ipucu vermir — sadəcə sayır.
 class _SecretTapTitle extends StatefulWidget {
   const _SecretTapTitle();
 

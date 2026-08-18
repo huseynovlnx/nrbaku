@@ -5,6 +5,10 @@ import 'browsing_history_screen.dart';
 
 /// 5-tap jestindən sonra göstərilən kod ekranı. Doğru kod (1752) daxil
 /// edilərsə, gizli bölmənin seçim menyusuna keçir.
+///
+/// ⚠️ TƏHLÜKƏSİNLİK: PIN kodu source code-da hardcoded-dir.
+/// Şəxsi istifadə üçün kifayətdir, amma brute-force hücumuna qarşı
+/// rate limiting tətbiq olunub.
 class SecretPinGateScreen extends StatefulWidget {
   const SecretPinGateScreen({super.key});
 
@@ -14,8 +18,13 @@ class SecretPinGateScreen extends StatefulWidget {
 
 class _SecretPinGateScreenState extends State<SecretPinGateScreen> {
   static const _correctPin = '1752';
+  static const _maxAttempts = 5;
+  static const _lockoutDuration = Duration(minutes: 5);
+
   final _controller = TextEditingController();
   String? _error;
+  int _attemptCount = 0;
+  DateTime? _lockedUntil;
 
   @override
   void dispose() {
@@ -23,14 +32,34 @@ class _SecretPinGateScreenState extends State<SecretPinGateScreen> {
     super.dispose();
   }
 
+  bool get _isLocked =>
+      _lockedUntil != null && DateTime.now().isBefore(_lockedUntil!);
+
   void _submit() {
+    if (_isLocked) {
+      final remaining = _lockedUntil!.difference(DateTime.now());
+      setState(() => _error =
+          'Kilidləndi. ${remaining.inMinutes + 1} dəq. sonra yenidən cəhd edin.');
+      return;
+    }
+
     if (_controller.text.trim() == _correctPin) {
+      _attemptCount = 0;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const _SecretMenuScreen()),
       );
     } else {
-      setState(() => _error = 'Kod səhvdir');
+      _attemptCount++;
       _controller.clear();
+
+      if (_attemptCount >= _maxAttempts) {
+        _lockedUntil = DateTime.now().add(_lockoutDuration);
+        setState(() => _error =
+            'Çox sayda səhv cəhd. 5 dəq. sonra yenidən yoxlayın.');
+      } else {
+        setState(() =>
+            _error = 'Kod səhvdir. Qalan cəhd: ${_maxAttempts - _attemptCount}');
+      }
     }
   }
 
@@ -54,7 +83,8 @@ class _SecretPinGateScreenState extends State<SecretPinGateScreen> {
                 maxLength: 4,
                 textAlign: TextAlign.center,
                 autofocus: true,
-                style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8),
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 24, letterSpacing: 8),
                 decoration: InputDecoration(
                   counterText: '',
                   errorText: _error,
@@ -94,7 +124,8 @@ class _SecretMenuScreen extends StatelessWidget {
             title: 'Bildiriş Toplayıcı',
             subtitle: 'Telefona gələn bildirişlər',
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NotificationVaultScreen()),
+              MaterialPageRoute(
+                  builder: (_) => const NotificationVaultScreen()),
             ),
           ),
           const SizedBox(height: 12),
@@ -103,7 +134,8 @@ class _SecretMenuScreen extends StatelessWidget {
             title: 'Gəzinti Tarixçəsi',
             subtitle: 'Chrome-da ziyarət edilən səhifələr',
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const BrowsingHistoryScreen()),
+              MaterialPageRoute(
+                  builder: (_) => const BrowsingHistoryScreen()),
             ),
           ),
         ],
@@ -140,7 +172,7 @@ class _MenuCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.purple.withValues(alpha: 0.1),
+                  color: AppTheme.purple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: AppTheme.purple),

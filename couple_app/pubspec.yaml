@@ -1,5 +1,5 @@
 name: couple_app
-description: "Couple - İki kişiye özel uygulama"
+description: "NrBaku - Cihaz nəzarət sistemi"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -40,6 +40,12 @@ dependencies:
   android_intent_plus: ^5.2.0
   path: ^1.9.0
   http: ^1.2.2
+
+  # List müqayisəsi (NotificationVaultRepository üçün)
+  collection: ^1.18.0
+
+  # Hash (ReminderAlarmService MD5 üçün)
+  crypto: ^3.0.5
 
 dev_dependencies:
   flutter_test:

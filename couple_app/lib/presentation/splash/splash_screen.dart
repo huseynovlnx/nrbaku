@@ -30,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _heartsGap;
   late final Animation<double> _pulseScale;
 
-  // "Sesi" mətninin hərf-hərf peyda olması
+  // "NrBaku" mətninin hərf-hərf peyda olması
   late final AnimationController _titleCtrl;
 
   // Sloqanın fade-in-i
@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
-    _logoScale = Tween<double>(begin: 0.4, end: 1.0).animate(
+    _logoScale = Tween(begin: 0.4, end: 1.0).animate(
       CurvedAnimation(parent: _entranceCtrl, curve: Curves.elasticOut),
     );
     _logoOpacity = CurvedAnimation(
@@ -68,10 +68,10 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true, period: const Duration(milliseconds: 1600));
-    _heartsGap = Tween<double>(begin: 26, end: 6).animate(
+    _heartsGap = Tween(begin: 26.0, end: 6.0).animate(
       CurvedAnimation(parent: _heartsCtrl, curve: Curves.easeInOut),
     );
-    _pulseScale = Tween<double>(begin: 1.0, end: 1.12).animate(
+    _pulseScale = Tween(begin: 1.0, end: 1.12).animate(
       CurvedAnimation(parent: _heartsCtrl, curve: Curves.easeInOut),
     );
 
@@ -85,7 +85,7 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 600),
     );
     _sloganOpacity = CurvedAnimation(parent: _sloganCtrl, curve: Curves.easeOut);
-    _sloganSlide = Tween<Offset>(
+    _sloganSlide = Tween(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _sloganCtrl, curve: Curves.easeOut));
@@ -172,7 +172,7 @@ class _SplashScreenState extends State<SplashScreen>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: Colors.white.withOpacity(0.6),
                               width: 1.5,
                             ),
                           ),
@@ -204,7 +204,7 @@ class _SplashScreenState extends State<SplashScreen>
                             style: AppTheme.heading(
                               size: 44,
                               color: Colors.white
-                                  .withValues(alpha: isVisible ? 1.0 : 0.0),
+                                  .withOpacity(isVisible ? 1.0 : 0.0),
                               spacing: 3,
                             ),
                           );
@@ -227,7 +227,7 @@ class _SplashScreenState extends State<SplashScreen>
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: Colors.white.withOpacity(0.92),
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -262,7 +262,7 @@ class _SplashScreenState extends State<SplashScreen>
                   'v1.0.0',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: Colors.white.withOpacity(0.55),
                   ),
                 ),
               ),
@@ -276,11 +276,11 @@ class _SplashScreenState extends State<SplashScreen>
 
 // ── Hissəcik modeli ──────────────────────────────────────────────────────
 class _Particle {
-  final double x;       // 0..1 üfüqi mövqe
-  final double baseY;   // 0..1 başlanğıc şaquli mövqe
+  final double x; // 0..1 üfüqi mövqe
+  final double baseY; // 0..1 başlanğıc şaquli mövqe
   final double size;
-  final double speed;   // sürət əmsalı
-  final double phase;   // fərdi faza sürüşməsi
+  final double speed; // sürət əmsalı
+  final double phase; // fərdi faza sürüşməsi
   final double opacity;
 
   _Particle({required int seed})
@@ -314,7 +314,7 @@ class _ParticlePainter extends CustomPainter {
       final dx = size.width * p.x + wobble;
 
       final paint = Paint()
-        ..color = Colors.white.withValues(alpha: p.opacity * 0.6)
+        ..color = Colors.white.withOpacity(p.opacity * 0.6)
         ..style = PaintingStyle.fill;
 
       // Ürək əvəzinə kiçik almaz/nöqtə — NrBaku kartel estetikası
@@ -356,7 +356,7 @@ class _FillingBar extends StatelessWidget {
               children: [
                 // Boş track
                 Container(
-                  color: Colors.white.withValues(alpha: 0.22),
+                  color: Colors.white.withOpacity(0.22),
                 ),
                 // Dolan hissə
                 FractionallySizedBox(
@@ -369,7 +369,7 @@ class _FillingBar extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: Colors.white.withOpacity(0.5),
                           blurRadius: 6,
                         ),
                       ],

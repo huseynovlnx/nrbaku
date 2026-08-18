@@ -27,6 +27,7 @@ class DeviceChatScreen extends ConsumerStatefulWidget {
 class _DeviceChatScreenState extends ConsumerState<DeviceChatScreen> {
   final _ctrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  int _lastMessageCount = 0;
 
   @override
   void initState() {
@@ -74,26 +75,22 @@ class _DeviceChatScreenState extends ConsumerState<DeviceChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final messagesAsync =
-        ref.watch(adminMessagesProvider(widget.deviceUid));
+    final messagesAsync = ref.watch(adminMessagesProvider(widget.deviceUid));
     final myUid = ref.watch(userDocProvider).value?.uid ?? '';
 
     return Column(
       children: [
         // Başlıq zolağı
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: const BoxDecoration(
             color: AppTheme.surface,
-            border:
-                Border(bottom: BorderSide(color: AppTheme.border)),
+            border: Border(bottom: BorderSide(color: AppTheme.border)),
           ),
           child: Row(
             children: [
               const Text('◆',
-                  style: TextStyle(
-                      color: AppTheme.purple, fontSize: 14)),
+                  style: TextStyle(color: AppTheme.purple, fontSize: 14)),
               const SizedBox(width: 8),
               Text(
                 widget.isAdmin ? 'ŞİFRƏLİ KANAL' : 'ADMİN İLƏ ƏLAQƏ',
@@ -112,12 +109,11 @@ class _DeviceChatScreenState extends ConsumerState<DeviceChatScreen> {
         Expanded(
           child: messagesAsync.when(
             loading: () => const Center(
-                child:
-                    CircularProgressIndicator(color: AppTheme.purple)),
+                child: CircularProgressIndicator(color: AppTheme.purple)),
             error: (e, _) => Center(
-                child: Text('Xəta: $e',
-                    style:
-                        AppTheme.body(color: AppTheme.alert))),
+              child: Text('Xəta: $e',
+                  style: AppTheme.body(color: AppTheme.alert)),
+            ),
             data: (messages) {
               if (messages.isEmpty) {
                 return Center(
@@ -126,22 +122,26 @@ class _DeviceChatScreenState extends ConsumerState<DeviceChatScreen> {
                     children: [
                       const Text('◆',
                           style: TextStyle(
-                              fontSize: 36,
-                              color: AppTheme.purple)),
+                              fontSize: 36, color: AppTheme.purple)),
                       const SizedBox(height: 10),
                       Text('Hələ mesaj yoxdur',
-                          style: AppTheme.body(
-                              color: AppTheme.textDim)),
+                          style: AppTheme.body(color: AppTheme.textDim)),
                     ],
                   ),
                 );
               }
-              WidgetsBinding.instance
-                  .addPostFrameCallback((_) => _scrollToBottom());
+
+              // Yalnız yeni mesaj gələndə scroll et
+              if (messages.length > _lastMessageCount) {
+                _lastMessageCount = messages.length;
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _scrollToBottom());
+              }
+
               return ListView.builder(
                 controller: _scrollCtrl,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 itemCount: messages.length,
                 itemBuilder: (context, i) {
                   final msg = messages[i];
@@ -213,8 +213,7 @@ class _MessageBubble extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.72),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isMe ? AppTheme.purple : AppTheme.surface,
           border: isMe ? null : Border.all(color: AppTheme.border),

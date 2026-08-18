@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/services/fcm_service.dart';
+import 'core/services/push_relay_service.dart';
 import 'core/services/urgent_call_launch_service.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/access_repository.dart';
@@ -16,10 +17,7 @@ import 'presentation/device/device_shell.dart';
 import 'presentation/splash/splash_screen.dart';
 import 'presentation/urgent_call/urgent_call_full_screen.dart';
 
-/// Bütün naviqasiyanı (BuildContext olmadan da) idarə edə bilmək üçün.
 final navigatorKey = GlobalKey<NavigatorState>();
-
-/// Tətbiqin harasında olursa olsun SnackBar göstərə bilmək üçün.
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
@@ -28,7 +26,12 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Arxa plan FCM handler-i — runApp-dan ƏVVƏL, YALNIZ BİR DƏFƏ
+  // ⚠️ BURAYA ÖZ DƏYƏRLƏRİNİ YAZ
+  PushRelayService.configure(
+    workerUrl: 'https://sesi-push-relay.nrbaku.workers.dev',
+    authSecret: '9fMWX21HIf90VeMkZVedkD1xfHVCfCCbQpu5lcY',
+  );
+
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   runApp(const ProviderScope(child: CoupleApp()));
@@ -103,7 +106,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     super.dispose();
   }
 
-  void _navigateToUrgentCall(Map<String, dynamic> data) {
+  void _navigateToUrgentCall(Map<String, String> data) {
     final callId = data['callId'] ?? '';
     if (callId.isEmpty) return;
     final fromName = data['fromName'] ?? 'Admin';
@@ -157,14 +160,46 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
     return authState.when(
       loading: () => const _MiniLoader(),
-      error: (e, _) => Scaffold(body: Center(child: Text('Xəta: $e'))),
+      error: (e, _) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppTheme.alert),
+              const SizedBox(height: 16),
+              Text('Giriş xətası: $e', style: AppTheme.body(color: AppTheme.alert)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => ref.read(authRepositoryProvider).signOut(),
+                child: const Text('Yenidən cəhd et'),
+              ),
+            ],
+          ),
+        ),
+      ),
       data: (user) {
         if (user == null) return const LoginScreen();
 
         final roleAsync = ref.watch(userRoleProvider);
         return roleAsync.when(
           loading: () => const _MiniLoader(),
-          error: (_, __) => const _MiniLoader(),
+          error: (e, _) => Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppTheme.alert),
+                  const SizedBox(height: 16),
+                  Text('Rol yoxlama xətası: $e', style: AppTheme.body(color: AppTheme.alert)),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => ref.read(authRepositoryProvider).signOut(),
+                    child: const Text('Yenidən cəhd et'),
+                  ),
+                ],
+              ),
+            ),
+          ),
           data: (role) {
             if (role == UserRole.admin) return const AdminShell();
             return const DeviceShell();

@@ -2,16 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/user_model.dart';
 import '../data/repositories/auth_repository.dart';
+import '../core/services/fcm_service.dart';
 
-final authRepositoryProvider =
-    Provider<AuthRepository>((ref) => AuthRepository());
+final authRepositoryProvider = Provider((ref) => AuthRepository());
 
-/// Firebase Auth oturumu
 final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
 });
 
-/// Giriş edən istifadəçinin Firestore sənədi
 final userDocProvider = StreamProvider<AppUser?>((ref) {
   final authState = ref.watch(authStateProvider);
   return authState.maybeWhen(
@@ -25,8 +23,7 @@ final userDocProvider = StreamProvider<AppUser?>((ref) {
 
 enum AuthStatus { idle, loading, error }
 
-class AuthController
-    extends StateNotifier<({AuthStatus status, String? error})> {
+class AuthController extends StateNotifier<({AuthStatus status, String? error})> {
   final AuthRepository _repo;
   AuthController(this._repo) : super((status: AuthStatus.idle, error: null));
 
@@ -52,6 +49,11 @@ class AuthController
       state = (status: AuthStatus.error, error: e.toString());
       return false;
     }
+  }
+
+  Future<void> signOut() async {
+    await FcmService.reset();
+    await _repo.signOut();
   }
 }
 
